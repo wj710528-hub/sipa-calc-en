@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="theme-color" content="#d62828" />
+  <meta name="description" content="Calculate projector throw ratio, throw distance, image size, image dimensions, and estimated screen brightness." />
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon-192.png">
+  <title>Sipa Projector Calculator</title>
+  <style>
+    :root{
+      --brand:#d62828;
+      --accent:#007bff;
+      --bg:#f0f4f8;
+      --card:#fff;
+      --text:#222;
+      --muted:#6b7280;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      -webkit-text-size-adjust:100%;
+    }
+    .wrap{
+      max-width:860px;
+      margin:0 auto;
+      padding:env(safe-area-inset-top) 16px calc(16px + env(safe-area-inset-bottom));
+    }
+    .card{
+      background:var(--card);
+      border-radius:12px;
+      box-shadow:0 4px 20px rgba(0,0,0,.06);
+      padding:16px;
+    }
+    header{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      margin-bottom:12px;
+      flex-wrap:wrap;
+    }
+    header img{width:96px;height:auto}
+    h1{font-size:18px;margin:0;font-weight:700;letter-spacing:.3px}
+    .grid{display:grid;grid-template-columns:1fr;gap:12px}
+    @media (min-width:900px){.grid{grid-template-columns:1.1fr .9fr}}
+    .section-title{font-size:14px;color:var(--muted);margin:8px 0}
+    .btnrow{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 12px}
+    .btn{
+      flex:1 1 30%;
+      min-height:48px;
+      border:1px solid #e5e7eb;
+      border-radius:10px;
+      background:#fff;
+      font-weight:700;
+      font-size:14px;
+      padding:8px 10px;
+      text-align:center;
+      touch-action:manipulation;
+      line-height:1.15;
+    }
+    .btn small{display:block;font-weight:600;color:#374151;opacity:.9}
+    .btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+    .btn.active small{color:#eaf2ff}
+    .row{margin:10px 0}
+    label{display:block;font-size:13px;color:#374151;margin-bottom:6px}
+    input{
+      width:100%;
+      padding:12px;
+      border:1px solid #e5e7eb;
+      border-radius:10px;
+      font-size:16px;
+      outline:none;
+    }
+    input[readonly]{background:#f5f7fb;color:var(--accent)}
+    .cta{
+      width:120px;
+      height:120px;
+      border-radius:50%;
+      border:none;
+      background:#ff8c00;
+      color:#fff;
+      font-weight:800;
+      font-size:18px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      margin:8px auto 12px;
+      cursor:pointer;
+    }
+    .cta:active{transform:scale(.98)}
+    .result{border:1px solid #e5e7eb;border-radius:12px;padding:12px;text-align:left}
+    .result p#result{
+      color:#111;
+      font-weight:700;
+      font-size:16px;
+      white-space:pre-line;
+      margin:6px 0 8px;
+    }
+    .canvas{
+      margin-top:6px;
+      border:1px solid #000;
+      background:#e9ecef;
+      position:relative;
+      width:100%;
+      aspect-ratio:16/10;
+      border-radius:8px;
+      overflow:hidden;
+    }
+    .dim-line{position:absolute;background:var(--accent)}
+    .w-line{height:2px;left:0;right:0;bottom:8px}
+    .h-line{width:2px;top:0;bottom:0;left:8px}
+    .dim-label{position:absolute;color:var(--accent);font-size:13px;white-space:nowrap}
+    .w-label{bottom:-2px;left:50%;transform:translate(-50%,100%)}
+    .h-label{
+      top:50%;
+      left:0;
+      transform:translate(-100%,-50%) rotate(90deg);
+      transform-origin:left top;
+    }
+    .area-center{
+      position:absolute;
+      top:50%;
+      left:50%;
+      transform:translate(-50%,-50%);
+      font-weight:700;
+    }
+    .tips{font-size:12px;color:#6b7280;line-height:1.5;margin-top:8px}
+    .note{font-size:12px;color:#6b7280;margin-top:6px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <header>
+        <img src="icon-192.png" alt="Sipa" />
+        <h1>Sipa Projector Calculator (Mobile / Web / PWA)</h1>
+      </header>
+
+      <div class="grid">
+        <section class="left">
+          <div class="section-title">Calculation Mode</div>
+          <div class="btnrow">
+            <button class="btn active" id="m-throw" onclick="setMode('throwRatio')">Throw Ratio</button>
+            <button class="btn" id="m-dist" onclick="setMode('distance')">Throw Distance</button>
+            <button class="btn" id="m-size" onclick="setMode('screenSize')">Image Size</button>
+          </div>
+
+          <div class="section-title">Image Aspect Ratio</div>
+          <div class="btnrow">
+            <button class="btn active" id="a-1610" onclick="setAspect('16:10')">16:10</button>
+            <button class="btn" id="a-169" onclick="setAspect('16:9')">16:9</button>
+            <button class="btn" id="a-43" onclick="setAspect('4:3')">4:3</button>
+          </div>
+
+          <div class="row">
+            <label for="throwRatio">Throw Ratio</label>
+            <input id="throwRatio" type="number" step="0.01" inputmode="decimal" value="0.44" />
+          </div>
+
+          <div class="row">
+            <label for="distance">Throw Distance (m)</label>
+            <input id="distance" type="number" step="0.01" inputmode="decimal" value="1.895" />
+          </div>
+
+          <div class="row">
+            <label for="screenSizeInch">Image Diagonal (inches)</label>
+            <input id="screenSizeInch" type="number" step="0.1" inputmode="decimal" value="200" />
+          </div>
+
+          <div class="row">
+            <label for="screenWidth">Image Width (m)</label>
+            <input id="screenWidth" type="number" readonly />
+          </div>
+
+          <div class="row">
+            <label for="screenHeight">Image Height (m)</label>
+            <input id="screenHeight" type="number" readonly />
+          </div>
+
+          <div class="section-title">Projection Surface</div>
+          <div class="btnrow">
+            <button class="btn active" id="g-1" onclick="setGain('0.7-0.9')">
+              Standard White Wall<small>(0.7–0.9)</small>
+            </button>
+            <button class="btn" id="g-2" onclick="setGain('1.0-1.2')">
+              Matte White Screen<small>(1.0–1.2)</small>
+            </button>
+            <button class="btn" id="g-3" onclick="setGain('1.5-2.5')">
+              High-Gain Screen<small>(1.5–2.5)</small>
+            </button>
+          </div>
+
+          <div class="row">
+            <label for="screenArea">Image Area (m²)</label>
+            <input id="screenArea" type="number" readonly />
+          </div>
+
+          <div class="row">
+            <label for="projectorBrightness">Projector Brightness (ISO Lumens)</label>
+            <input id="projectorBrightness" type="number" step="1" inputmode="numeric" value="5000" />
+          </div>
+        </section>
+
+        <section class="right">
+          <button class="cta" onclick="calculate()">Calculate</button>
+
+          <div class="result">
+            <h3 style="margin:6px 0 8px">Calculation Results</h3>
+            <p id="result">Results will appear here.</p>
+
+            <div class="canvas" id="canvas">
+              <div class="dim-line w-line"></div>
+              <div class="dim-line h-line"></div>
+              <div class="dim-label w-label" id="wLabel">Width: 0.00 m</div>
+              <div class="dim-label h-label" id="hLabel">Height: 0.00 m</div>
+              <div class="area-center" id="aLabel">Area: 0.00 m²</div>
+            </div>
+
+            <div class="tips">
+              Projected-image brightness reference:
+              <br>Cinema: 40–60 nit (DCI reference: 14 fL ≈ 48 nit)
+              <br>Home theater: 80–120 nit (good light control)
+              <br>Meeting / education: 120–250 nit (typical indoor lighting)
+              <br>Bright exhibits: 250–400 nit (higher values are difficult for projection)
+              <div style="margin-top:6px">Estimated brightness (nit): <b id="brightnessResult">Not calculated</b></div>
+            </div>
+
+            <div class="note">Note: PWA offline caching requires HTTPS or localhost.</div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentMode='throwRatio', currentAspect='16:10', currentGain='0.7-0.9';
+
+    const btnGroups = {
+      mode:['m-throw','m-dist','m-size'],
+      aspect:['a-1610','a-169','a-43'],
+      gain:['g-1','g-2','g-3']
+    };
+
+    function setActive(ids, activeId){
+      ids.forEach(id => document.getElementById(id).classList.toggle('active', id === activeId));
+    }
+
+    function setMode(mode){
+      currentMode = mode;
+      setActive(
+        btnGroups.mode,
+        mode === 'throwRatio' ? 'm-throw' : mode === 'distance' ? 'm-dist' : 'm-size'
+      );
+      updateFields();
+    }
+
+    function setAspect(aspect){
+      currentAspect = aspect;
+      setActive(
+        btnGroups.aspect,
+        aspect === '16:10' ? 'a-1610' : aspect === '16:9' ? 'a-169' : 'a-43'
+      );
+
+      const canvas = document.getElementById('canvas');
+      if(aspect === '16:10') canvas.style.aspectRatio = '16 / 10';
+      if(aspect === '16:9') canvas.style.aspectRatio = '16 / 9';
+      if(aspect === '4:3') canvas.style.aspectRatio = '4 / 3';
+      calculate();
+    }
+
+    function setGain(gain){
+      currentGain = gain;
+      setActive(
+        btnGroups.gain,
+        gain === '0.7-0.9' ? 'g-1' : gain === '1.0-1.2' ? 'g-2' : 'g-3'
+      );
+      calculate();
+    }
+
+    function updateFields(){
+      const throwRatio = document.getElementById('throwRatio');
+      const distance = document.getElementById('distance');
+      const screenSizeInch = document.getElementById('screenSizeInch');
+      const screenWidth = document.getElementById('screenWidth');
+      const screenHeight = document.getElementById('screenHeight');
+
+      throwRatio.readOnly = false;
+      distance.readOnly = false;
+      screenSizeInch.readOnly = false;
+      screenWidth.readOnly = true;
+      screenHeight.readOnly = true;
+
+      if(currentMode === 'throwRatio'){
+        throwRatio.readOnly = true;
+        distance.readOnly = false;
+        screenSizeInch.readOnly = false;
+        screenWidth.value = '';
+        screenHeight.value = '';
+      }else if(currentMode === 'distance'){
+        throwRatio.readOnly = false;
+        distance.readOnly = true;
+        screenSizeInch.readOnly = false;
+        distance.value = '';
+      }else{
+        throwRatio.readOnly = false;
+        distance.readOnly = false;
+        screenSizeInch.readOnly = true;
+        screenSizeInch.value = '';
+      }
+
+      calculate();
+    }
+
+    function calculate(){
+      const throwRatio = parseFloat(document.getElementById('throwRatio').value) || 0;
+      const distance = parseFloat(document.getElementById('distance').value) || 0;
+      const screenSizeInch = parseFloat(document.getElementById('screenSizeInch').value) || 0;
+      const projectorBrightness = parseFloat(document.getElementById('projectorBrightness').value) || 0;
+
+      let width = 0;
+      let height = 0;
+      let resultText = '';
+
+      if(currentMode === 'throwRatio'){
+        if(distance > 0 && screenSizeInch > 0){
+          const diagonal = screenSizeInch * 0.0254;
+          [width, height] = calcWH(diagonal, currentAspect);
+          const tr = distance / width;
+          document.getElementById('throwRatio').value = tr.toFixed(2);
+          resultText =
+            `Image diagonal: ${screenSizeInch.toFixed(2)} inches\n` +
+            `Image dimensions: ${width.toFixed(2)} m × ${height.toFixed(2)} m`;
+        }else{
+          setResultPlaceholders();
+          document.getElementById('result').textContent =
+            'Enter the throw distance and image diagonal.';
+          return;
+        }
+      }else if(currentMode === 'distance'){
+        if(throwRatio > 0 && screenSizeInch > 0){
+          const diagonal = screenSizeInch * 0.0254;
+          [width, height] = calcWH(diagonal, currentAspect);
+          const d = throwRatio * width;
+          document.getElementById('distance').value = d.toFixed(2);
+          resultText =
+            `Image diagonal: ${screenSizeInch.toFixed(2)} inches\n` +
+            `Image dimensions: ${width.toFixed(2)} m × ${height.toFixed(2)} m`;
+        }else{
+          setResultPlaceholders();
+          document.getElementById('result').textContent =
+            'Enter the throw ratio and image diagonal.';
+          return;
+        }
+      }else{
+        if(throwRatio > 0 && distance > 0){
+          width = distance / throwRatio;
+          height = width * getAspectHeight(currentAspect);
+          const diagInch = Math.sqrt(width * width + height * height) / 0.0254;
+          document.getElementById('screenSizeInch').value = diagInch.toFixed(2);
+          resultText =
+            `Image diagonal: ${diagInch.toFixed(2)} inches\n` +
+            `Image dimensions: ${width.toFixed(2)} m × ${height.toFixed(2)} m`;
+        }else{
+          setResultPlaceholders();
+          document.getElementById('result').textContent =
+            'Enter the throw ratio and throw distance.';
+          return;
+        }
+      }
+
+      document.getElementById('screenWidth').value = width.toFixed(2);
+      document.getElementById('screenHeight').value = height.toFixed(2);
+
+      const area = width * height;
+      document.getElementById('screenArea').value = area.toFixed(2);
+
+      document.getElementById('wLabel').textContent = `Width: ${width.toFixed(2)} m`;
+      document.getElementById('hLabel').textContent = `Height: ${height.toFixed(2)} m`;
+      document.getElementById('aLabel').textContent = `Area: ${area.toFixed(2)} m²`;
+
+      // Estimated luminance (nit) ≈ (lumens / image area / π) × screen gain.
+      if(projectorBrightness > 0 && area > 0){
+        const lux = projectorBrightness / area;
+        const [gmin, gmax] = currentGain.split('-').map(Number);
+        const nmin = (lux * gmin / Math.PI).toFixed(1);
+        const nmax = (lux * gmax / Math.PI).toFixed(1);
+        document.getElementById('brightnessResult').textContent = `${nmin} – ${nmax}`;
+      }else{
+        document.getElementById('brightnessResult').textContent = 'Not calculated';
+      }
+
+      document.getElementById('result').textContent = resultText;
+    }
+
+    function setResultPlaceholders(){
+      ['screenWidth','screenHeight','screenArea'].forEach(
+        id => document.getElementById(id).value = ''
+      );
+      document.getElementById('wLabel').textContent = 'Width: 0.00 m';
+      document.getElementById('hLabel').textContent = 'Height: 0.00 m';
+      document.getElementById('aLabel').textContent = 'Area: 0.00 m²';
+      document.getElementById('brightnessResult').textContent = 'Not calculated';
+    }
+
+    function calcWH(diagonal, aspect){
+      if(aspect === '16:10'){
+        return [
+          diagonal * (16 / Math.sqrt(16 * 16 + 10 * 10)),
+          diagonal * (10 / Math.sqrt(16 * 16 + 10 * 10))
+        ];
+      }else if(aspect === '16:9'){
+        return [
+          diagonal * (16 / Math.sqrt(16 * 16 + 9 * 9)),
+          diagonal * (9 / Math.sqrt(16 * 16 + 9 * 9))
+        ];
+      }else{
+        return [
+          diagonal * (4 / Math.sqrt(4 * 4 + 3 * 3)),
+          diagonal * (3 / Math.sqrt(4 * 4 + 3 * 3))
+        ];
+      }
+    }
+
+    function getAspectHeight(aspect){
+      if(aspect === '16:10') return 10 / 16;
+      if(aspect === '16:9') return 9 / 16;
+      return 3 / 4;
+    }
+
+    if('serviceWorker' in navigator){
+      window.addEventListener('load', () => {
+        navigator.serviceWorker
+          .register('sw.js')
+          .catch(error => console.warn('Service worker registration failed.', error));
+      });
+    }
+
+    window.addEventListener('load', () => {
+      setAspect('16:10');
+      updateFields();
+    }, {once:true});
+  </script>
+</body>
+</html>
