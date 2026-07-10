@@ -1,0 +1,14 @@
+Sipa Projector Calculator — English V2.0
+Updated: 2026-07-11
+
+Key changes:
+1. Revised luminance guide:
+   - Cinema/dark room: 40–60 nit
+   - Home theater/dim room: 60–120 nit
+   - Meeting/classroom/controlled ambient: 120–200 nit
+   - Bright indoor/exhibit: 200–300 nit
+   - Above 300 nit: specialty projection assessment
+2. Added nit and fL results.
+3. Added automatic application assessment.
+4. Added ambient-light, screen and system-contrast cautions.
+5. Updated the cache version while retaining the existing installed-app identity.

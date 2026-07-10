@@ -1,5 +1,5 @@
-// Cache-first navigation with background update; cache-first static assets; offline fallback.
-const CACHE = 'sipa-calc-v3-english';
+const CACHE = 'sipa-calc-en-v2-20260711';
+const OWN_CACHE_PREFIXES = ['sipa-calc-en-', 'sipa-calc-v3-english'];
 const CORE = [
   './',
   './index.html',
@@ -17,7 +17,12 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.map(key => key !== CACHE ? caches.delete(key) : null))
+      Promise.all(
+        keys.map(key => {
+          const belongsToThisApp = OWN_CACHE_PREFIXES.some(prefix => key.startsWith(prefix));
+          return belongsToThisApp && key !== CACHE ? caches.delete(key) : null;
+        })
+      )
     )
   );
   self.clients.claim();
@@ -25,22 +30,27 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   const request = event.request;
-  const isHTML =
+  if (request.method !== 'GET') return;
+
+  const acceptsHTML =
     request.mode === 'navigate' ||
     (request.headers.get('accept') || '').includes('text/html');
 
-  if(isHTML){
+  if (acceptsHTML) {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE);
-      const cached = await cache.match('./index.html');
-      const network = fetch(request)
-        .then(response => {
-          cache.put('./index.html', response.clone());
-          return response;
-        })
-        .catch(() => null);
-
-      return cached || await network || await cache.match('./offline.html');
+      try {
+        const response = await fetch(request);
+        if (response && response.ok) {
+          await cache.put('./index.html', response.clone());
+        }
+        return response;
+      } catch (error) {
+        return (
+          await cache.match('./index.html') ||
+          await cache.match('./offline.html')
+        );
+      }
     })());
     return;
   }
@@ -49,21 +59,16 @@ self.addEventListener('fetch', event => {
     const cache = await caches.open(CACHE);
     const cached = await cache.match(request);
 
-    if(cached){
-      event.waitUntil(
-        fetch(request)
-          .then(response => cache.put(request, response.clone()))
-          .catch(() => {})
-      );
-      return cached;
-    }
+    const network = fetch(request)
+      .then(response => {
+        if (response && response.ok) cache.put(request, response.clone());
+        return response;
+      })
+      .catch(() => null);
 
-    try{
-      const response = await fetch(request);
-      cache.put(request, response.clone());
-      return response;
-    }catch(error){
-      return new Response('Offline', {status:503, statusText:'Offline'});
-    }
+    return cached || await network || new Response('Offline', {
+      status: 503,
+      statusText: 'Offline'
+    });
   })());
 });

@@ -1,10 +1,12 @@
 {
   "name": "Sipa Projector Calculator",
   "short_name": "Sipa Calculator",
-  "description": "Calculate projector throw ratio, throw distance, image size, and estimated screen brightness.",
+  "description": "Calculate throw ratio, throw distance, image size and theoretical on-screen luminance.",
   "lang": "en",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
+  "orientation": "any",
   "background_color": "#ffffff",
   "theme_color": "#d62828",
   "icons": [

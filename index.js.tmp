@@ -1,0 +1,172 @@
+
+let currentMode = 'throwRatio';
+let currentAspect = '16:10';
+let currentGain = '0.7-0.9';
+
+const I18N = {"assessBelow":"Below the typical cinema reference range","assessCinema":"Suitable for cinema or a fully dark room","assessHome":"Suitable for home theater or a dim room","assessMeeting":"Suitable for meetings or classrooms with controlled ambient light","assessBright":"Suitable for bright indoor or exhibit use when light on the screen is controlled","assessSpecial":"Above 300 nit; treat as a specialty projection assessment","noteLow":"Consider a smaller image, higher effective light output or a higher-gain screen.","noteOver300":"Verify ambient light, screen type, hotspot risk and image-system contrast.","noteAmbient":"Ambient light raises the black level; nit alone does not guarantee readability.","zeroWidth":"Width: 0.00 m","zeroHeight":"Height: 0.00 m","zeroArea":"Area: 0.00 m²","notCalculated":"Not calculated","assessWaiting":"The application assessment will appear after calculation.","waiting":"Waiting","needDistanceSize":"Enter the throw distance and image diagonal.","needRatioSize":"Enter the throw ratio and image diagonal.","needRatioDistance":"Enter the throw ratio and throw distance.","widthLabel":"Width: ","heightLabel":"Height: ","areaLabel":"Area: ","squareMeter":" m²","resultDiagonal":"Image diagonal: ","inches":" inches","resultDimensions":"Image dimensions: ","resultArea":"Image area: ","recommendation":"Application assessment: ","calculated":"Calculated","geometryOnly":"Geometry only"};
+
+const modeIds = {throwRatio:'m-throw',distance:'m-distance',screenSize:'m-size'};
+const aspectIds = {'16:10':'a-1610','16:9':'a-169','4:3':'a-43'};
+const gainIds = {'0.7-0.9':'g-wall','1.0-1.2':'g-matte','1.5-2.5':'g-high'};
+
+function setActive(map, value){
+  Object.entries(map).forEach(([key,id])=>{
+    document.getElementById(id).classList.toggle('active', key===value);
+  });
+}
+function setMode(mode){
+  currentMode = mode;
+  setActive(modeIds, mode);
+  updateFields();
+}
+function setAspect(aspect){
+  currentAspect = aspect;
+  setActive(aspectIds, aspect);
+  document.getElementById('canvas').style.aspectRatio = aspect.replace(':',' / ');
+  calculate();
+}
+function setGain(gain){
+  currentGain = gain;
+  setActive(gainIds, gain);
+  calculate();
+}
+function numberValue(id){
+  const value = parseFloat(document.getElementById(id).value);
+  return Number.isFinite(value) ? value : 0;
+}
+function calcWH(diagonal, aspect){
+  const parts = aspect.split(':').map(Number);
+  const denominator = Math.hypot(parts[0], parts[1]);
+  return [diagonal * parts[0] / denominator, diagonal * parts[1] / denominator];
+}
+function aspectHeightRatio(aspect){
+  const parts = aspect.split(':').map(Number);
+  return parts[1] / parts[0];
+}
+function formatRange(a,b,digits=1){
+  return `${a.toFixed(digits)} – ${b.toFixed(digits)}`;
+}
+function classifyLuminance(nmin,nmax){
+  const mid = (nmin+nmax)/2;
+  let primary = '';
+  if(mid < 40) primary = I18N.assessBelow;
+  else if(mid < 60) primary = I18N.assessCinema;
+  else if(mid < 120) primary = I18N.assessHome;
+  else if(mid < 200) primary = I18N.assessMeeting;
+  else if(mid <= 300) primary = I18N.assessBright;
+  else primary = I18N.assessSpecial;
+
+  const notes = [];
+  if(nmin < 40) notes.push(I18N.noteLow);
+  if(nmax > 300) notes.push(I18N.noteOver300);
+  if(nmax >= 120) notes.push(I18N.noteAmbient);
+  return {primary, notes};
+}
+function setEmpty(message){
+  document.getElementById('result').textContent = message;
+  ['screenWidth','screenHeight','screenArea'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('wLabel').textContent = I18N.zeroWidth;
+  document.getElementById('hLabel').textContent = I18N.zeroHeight;
+  document.getElementById('areaLabel').textContent = I18N.zeroArea;
+  document.getElementById('luminanceValue').textContent = I18N.notCalculated;
+  document.getElementById('footLambertValue').textContent = I18N.notCalculated;
+  document.getElementById('assessment').innerHTML = I18N.assessWaiting;
+  document.getElementById('resultStatus').textContent = I18N.waiting;
+}
+function updateFields(){
+  const throwRatio = document.getElementById('throwRatio');
+  const distance = document.getElementById('distance');
+  const screenSize = document.getElementById('screenSizeInch');
+
+  throwRatio.readOnly = currentMode === 'throwRatio';
+  distance.readOnly = currentMode === 'distance';
+  screenSize.readOnly = currentMode === 'screenSize';
+
+  if(currentMode === 'throwRatio' && !throwRatio.value) throwRatio.value = '0.44';
+  calculate();
+}
+function calculate(){
+  let throwRatio = numberValue('throwRatio');
+  let distance = numberValue('distance');
+  let screenSizeInch = numberValue('screenSizeInch');
+  const projectorBrightness = numberValue('projectorBrightness');
+
+  let width=0, height=0, diagonal=0;
+
+  if(currentMode === 'throwRatio'){
+    if(distance<=0 || screenSizeInch<=0){
+      setEmpty(I18N.needDistanceSize); return;
+    }
+    diagonal = screenSizeInch * 0.0254;
+    [width,height] = calcWH(diagonal,currentAspect);
+    throwRatio = distance / width;
+    document.getElementById('throwRatio').value = throwRatio.toFixed(2);
+  }else if(currentMode === 'distance'){
+    if(throwRatio<=0 || screenSizeInch<=0){
+      setEmpty(I18N.needRatioSize); return;
+    }
+    diagonal = screenSizeInch * 0.0254;
+    [width,height] = calcWH(diagonal,currentAspect);
+    distance = throwRatio * width;
+    document.getElementById('distance').value = distance.toFixed(2);
+  }else{
+    if(throwRatio<=0 || distance<=0){
+      setEmpty(I18N.needRatioDistance); return;
+    }
+    width = distance / throwRatio;
+    height = width * aspectHeightRatio(currentAspect);
+    diagonal = Math.hypot(width,height);
+    screenSizeInch = diagonal / 0.0254;
+    document.getElementById('screenSizeInch').value = screenSizeInch.toFixed(1);
+  }
+
+  const area = width * height;
+  document.getElementById('screenWidth').value = width.toFixed(2);
+  document.getElementById('screenHeight').value = height.toFixed(2);
+  document.getElementById('screenArea').value = area.toFixed(2);
+
+  document.getElementById('wLabel').textContent = I18N.widthLabel + width.toFixed(2) + ' m';
+  document.getElementById('hLabel').textContent = I18N.heightLabel + height.toFixed(2) + ' m';
+  document.getElementById('areaLabel').textContent = I18N.areaLabel + area.toFixed(2) + I18N.squareMeter;
+
+  document.getElementById('result').textContent =
+    I18N.resultDiagonal + screenSizeInch.toFixed(1) + I18N.inches +
+    '\n' + I18N.resultDimensions + width.toFixed(2) + ' m × ' + height.toFixed(2) + ' m' +
+    '\n' + I18N.resultArea + area.toFixed(2) + I18N.squareMeter;
+
+  if(projectorBrightness>0 && area>0){
+    const [gmin,gmax] = currentGain.split('-').map(Number);
+    const lux = projectorBrightness / area;
+    const nmin = lux * gmin / Math.PI;
+    const nmax = lux * gmax / Math.PI;
+    const fmin = nmin / 3.426;
+    const fmax = nmax / 3.426;
+    const assessment = classifyLuminance(nmin,nmax);
+
+    document.getElementById('luminanceValue').textContent = formatRange(nmin,nmax) + ' nit';
+    document.getElementById('footLambertValue').textContent = formatRange(fmin,fmax) + ' fL';
+    document.getElementById('assessment').innerHTML =
+      '<strong>' + I18N.recommendation + assessment.primary + '</strong>' +
+      (assessment.notes.length ? '<br>' + assessment.notes.join(' ') : '');
+    document.getElementById('resultStatus').textContent = I18N.calculated;
+  }else{
+    document.getElementById('luminanceValue').textContent = I18N.notCalculated;
+    document.getElementById('footLambertValue').textContent = I18N.notCalculated;
+    document.getElementById('assessment').innerHTML = I18N.assessWaiting;
+    document.getElementById('resultStatus').textContent = I18N.geometryOnly;
+  }
+}
+['throwRatio','distance','screenSizeInch','projectorBrightness'].forEach(id=>{
+  document.getElementById(id).addEventListener('input',()=>calculate());
+});
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  });
+}
+window.addEventListener('load',()=>{
+  setActive(modeIds,currentMode);
+  setActive(aspectIds,currentAspect);
+  setActive(gainIds,currentGain);
+  updateFields();
+});
