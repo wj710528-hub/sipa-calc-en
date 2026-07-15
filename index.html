@@ -1,528 +1,99 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="format-detection" content="telephone=no">
-  <meta name="theme-color" content="#d62828">
-  <meta name="description" content="Sipa projector throw ratio, throw distance, image size and theoretical on-screen luminance calculator.">
-  <link rel="manifest" href="./manifest.json">
-  <link rel="icon" href="./icon-192.png">
-  <link rel="apple-touch-icon" href="./icon-192.png">
-  <title>Sipa Projector Calculator V2.0</title>
-  <style>
-:root{
-  --brand:#d62828;
-  --brand-dark:#a71919;
-  --accent:#1261a0;
-  --accent-soft:#eaf3fb;
-  --bg:#eef3f7;
-  --card:#ffffff;
-  --text:#17202a;
-  --muted:#667085;
-  --border:#dce3ea;
-  --success:#16794b;
-  --warning:#9a6700;
-  --shadow:0 8px 28px rgba(15,23,42,.08);
-}
-*{box-sizing:border-box}
-html{min-height:100%;background:var(--bg)}
-body{
-  margin:0;
-  min-height:100%;
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
-  background:linear-gradient(180deg,#f7fafc 0,var(--bg) 260px);
-  color:var(--text);
-  -webkit-text-size-adjust:100%;
-}
-button,input{font:inherit}
-button{touch-action:manipulation}
-.wrap{
-  width:min(920px,100%);
-  margin:0 auto;
-  padding:max(14px,env(safe-area-inset-top)) 14px calc(18px + env(safe-area-inset-bottom));
-}
-.shell{
-  background:var(--card);
-  border:1px solid rgba(220,227,234,.8);
-  border-radius:18px;
-  box-shadow:var(--shadow);
-  overflow:hidden;
-}
-.header{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  padding:16px;
-  border-bottom:1px solid var(--border);
-  background:linear-gradient(135deg,#fff,#f8fbfd);
-}
-.header img{width:58px;height:58px;border-radius:14px;object-fit:contain}
-.header-copy{min-width:0;flex:1}
-.header h1{font-size:19px;line-height:1.25;margin:0;font-weight:800}
-.header p{font-size:12px;color:var(--muted);margin:4px 0 0}
-.version{
-  flex:0 0 auto;
-  font-size:11px;
-  font-weight:800;
-  color:var(--brand);
-  background:#fff1f1;
-  border:1px solid #ffd2d2;
-  padding:5px 8px;
-  border-radius:999px;
-}
-.content{display:grid;grid-template-columns:1fr;gap:14px;padding:14px}
-@media(min-width:840px){.content{grid-template-columns:1.05fr .95fr;padding:18px}}
-.panel{
-  border:1px solid var(--border);
-  border-radius:14px;
-  background:#fff;
-  padding:14px;
-}
-.section-title{
-  font-size:13px;
-  font-weight:800;
-  color:#3c4858;
-  margin:3px 0 8px;
-}
-.btnrow{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
-.choice{
-  border:1px solid var(--border);
-  background:#fff;
-  color:#2f3b49;
-  min-height:48px;
-  border-radius:11px;
-  padding:8px 7px;
-  font-size:13px;
-  font-weight:750;
-  line-height:1.18;
-  cursor:pointer;
-}
-.choice small{display:block;margin-top:3px;color:var(--muted);font-size:10px;font-weight:650}
-.choice.active{
-  color:#fff;
-  background:var(--accent);
-  border-color:var(--accent);
-  box-shadow:0 5px 14px rgba(18,97,160,.18);
-}
-.choice.active small{color:#e9f4fd}
-.fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.field.full{grid-column:1/-1}
-label{display:block;font-size:12px;font-weight:700;color:#465362;margin:0 0 5px}
-input{
-  width:100%;
-  min-height:45px;
-  border:1px solid var(--border);
-  border-radius:10px;
-  padding:10px 11px;
-  color:var(--text);
-  background:#fff;
-  outline:none;
-}
-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(18,97,160,.1)}
-input[readonly]{color:var(--accent);background:#f5f9fc;font-weight:750}
-.surface-row{grid-template-columns:repeat(3,1fr)}
-.calculate{
-  width:100%;
-  min-height:50px;
-  border:0;
-  border-radius:12px;
-  background:linear-gradient(135deg,#f28b00,#e76f00);
-  color:#fff;
-  font-size:17px;
-  font-weight:850;
-  cursor:pointer;
-  box-shadow:0 7px 18px rgba(231,111,0,.2);
-}
-.calculate:active{transform:translateY(1px)}
-.result-title{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
-.result-title h2{font-size:16px;margin:0}
-.status{
-  border-radius:999px;
-  padding:5px 8px;
-  font-size:10px;
-  font-weight:800;
-  background:#edf2f7;
-  color:#475569;
-}
-.result-text{
-  white-space:pre-line;
-  min-height:56px;
-  font-size:15px;
-  line-height:1.6;
-  font-weight:750;
-  margin:8px 0 10px;
-}
-.canvas{
-  position:relative;
-  width:100%;
-  aspect-ratio:16/10;
-  border:1px solid #202833;
-  border-radius:10px;
-  background:linear-gradient(145deg,#edf1f5,#dce4eb);
-  overflow:hidden;
-  margin:8px 0 12px;
-}
-.canvas:before{
-  content:"";
-  position:absolute;
-  inset:10px;
-  border:1px dashed rgba(18,97,160,.45);
-  border-radius:6px;
-}
-.dim-label{
-  position:absolute;
-  z-index:2;
-  color:var(--accent);
-  background:rgba(255,255,255,.82);
-  border-radius:6px;
-  padding:2px 5px;
-  font-size:11px;
-  font-weight:800;
-}
-.w-label{left:50%;bottom:8px;transform:translateX(-50%)}
-.h-label{left:8px;top:50%;transform:translateY(-50%)}
-.area-label{left:50%;top:50%;transform:translate(-50%,-50%);font-size:13px;color:#263442}
-.luminance-box{
-  border:1px solid #cfe0ef;
-  background:var(--accent-soft);
-  border-radius:12px;
-  padding:12px;
-  margin-top:10px;
-}
-.metric-label{font-size:11px;color:#4c5b6b;font-weight:750}
-.metric-value{font-size:22px;line-height:1.2;color:var(--accent);font-weight:900;margin:3px 0}
-.metric-sub{font-size:12px;color:#405061;font-weight:700}
-.assessment{
-  margin-top:9px;
-  padding-top:9px;
-  border-top:1px solid #cfe0ef;
-  font-size:12px;
-  line-height:1.55;
-  color:#334155;
-}
-.assessment strong{color:#17202a}
-.guide{margin-top:12px}
-.guide h3{font-size:13px;margin:0 0 7px}
-.guide-grid{display:grid;grid-template-columns:1fr;gap:5px}
-.guide-item{
-  display:grid;
-  grid-template-columns:92px 1fr;
-  gap:8px;
-  align-items:start;
-  font-size:11px;
-  line-height:1.4;
-  padding:6px 7px;
-  border-radius:8px;
-  background:#f8fafc;
-}
-.guide-item b{color:#273444}
-.guide-item span{color:#5f6b78}
-.notice{
-  margin-top:10px;
-  font-size:10.5px;
-  line-height:1.5;
-  color:#697586;
-  padding:9px 10px;
-  border-left:3px solid #a8b8c8;
-  background:#f8fafc;
-  border-radius:0 8px 8px 0;
-}
-.footer-note{
-  text-align:center;
-  color:#7b8794;
-  font-size:10px;
-  padding:0 14px 14px;
-}
-@media(max-width:480px){
-  .wrap{padding-left:9px;padding-right:9px}
-  .header{padding:13px}
-  .header img{width:50px;height:50px}
-  .header h1{font-size:17px}
-  .content{padding:9px;gap:9px}
-  .panel{padding:11px}
-  .choice{font-size:12px;padding:7px 4px}
-  .fields{gap:8px}
-  .guide-item{grid-template-columns:82px 1fr}
-}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <main class="shell">
-    <header class="header">
-      <img src="./icon-192.png" alt="Sipa">
-      <div class="header-copy">
-        <h1>Sipa Projector Calculator</h1>
-        <p>Throw distance · Image size · Theoretical luminance</p>
-      </div>
-      <span class="version">V2.0</span>
-    </header>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#d62828"><meta name="description" content="Sipa Projection Calculator V3.0 for throw ratio, distance, image size and screen illuminance calculations for projectors of any brand."><link rel="manifest" href="./manifest.json"><link rel="icon" href="./icon-192.png"><link rel="apple-touch-icon" href="./icon-192.png"><title>Sipa Projection Calculator V3.0</title><style>
+:root{--brand:#d62828;--accent:#1267a9;--bg:#f3f6fa;--card:#fff;--border:#dfe6ee;--text:#1f2937;--muted:#667085;--shadow:0 10px 30px rgba(15,23,42,.08)}
+*{box-sizing:border-box}html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,"PingFang SC","Microsoft YaHei",sans-serif}
+button,input{font:inherit}button{touch-action:manipulation}
+.wrap{max-width:980px;margin:0 auto;padding:max(14px,env(safe-area-inset-top)) 14px calc(18px + env(safe-area-inset-bottom))}
+.shell{background:var(--card);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);overflow:hidden}
+.header{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);background:linear-gradient(135deg,#fff,#f9fbfd)}
+.header img{width:54px;height:54px;border-radius:14px}.header .copy{flex:1}.header h1{margin:0;font-size:19px;font-weight:900}.header p{margin:4px 0 0;font-size:12px;color:var(--muted)}
+.badge{font-size:11px;font-weight:800;padding:5px 9px;border-radius:999px;background:#fff1f1;color:var(--brand);border:1px solid #ffd7d7}
+.grid{display:grid;grid-template-columns:1.05fr .95fr;gap:14px;padding:14px}@media(max-width:840px){.grid{grid-template-columns:1fr}}
+.panel{border:1px solid var(--border);border-radius:14px;padding:13px;background:#fff}
+.section-title{font-size:13px;font-weight:850;color:#344054;margin:2px 0 8px}
+.btnrow{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}.btnrow.two{grid-template-columns:repeat(2,1fr)}
+.choice{min-height:46px;padding:8px;border-radius:11px;border:1px solid var(--border);background:#fff;color:#344054;font-size:13px;font-weight:800;line-height:1.18;cursor:pointer}
+.choice small{display:block;font-size:10px;color:var(--muted);margin-top:3px}.choice.active{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 6px 16px rgba(18,103,169,.18)}.choice.active small{color:#ecf6fd}
+.fields{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.field.full{grid-column:1/-1}label{display:block;font-size:12px;font-weight:750;color:#475467;margin:0 0 5px}
+input{width:100%;min-height:44px;padding:10px 11px;border:1px solid var(--border);border-radius:10px;outline:none}input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(18,103,169,.12)}input[readonly]{background:#f8fafc;color:#1367a8;font-weight:800}
+.calc-btn{width:100%;border:0;border-radius:12px;min-height:49px;background:linear-gradient(135deg,#ef7d00,#de5d00);color:#fff;font-weight:900;font-size:17px;cursor:pointer}
+.results-top{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.kpi{border:1px solid #d6e7f3;border-radius:12px;background:#edf6fc;padding:11px}.kpi.primary{grid-column:1/-1;background:#eef8f2;border-color:#d2eadc}
+.kpi .label{font-size:11px;font-weight:750;color:#506273}.kpi .value{font-size:27px;font-weight:950;line-height:1.15;margin:3px 0 2px;color:#0f5f3a}.kpi.secondary .value{font-size:21px;color:#0e5f9c}.kpi .sub{font-size:12px;color:#4f6070;font-weight:700}
+.result-lines{margin-top:10px;padding:11px;border:1px solid var(--border);border-radius:12px;background:#fbfcfe;font-size:14px;line-height:1.65;font-weight:750;white-space:pre-line}
+.diagram{position:relative;width:100%;aspect-ratio:16/10;background:linear-gradient(145deg,#edf2f6,#dee7ee);border:1px solid #223040;border-radius:12px;overflow:hidden;margin-top:10px}.diagram:before{content:"";position:absolute;inset:10px;border:1px dashed rgba(18,103,169,.45);border-radius:7px}
+.dlabel{position:absolute;background:rgba(255,255,255,.86);color:#0e5f9c;border-radius:6px;padding:2px 6px;font-size:11px;font-weight:850}.dlabel.w{left:50%;bottom:8px;transform:translateX(-50%)}.dlabel.h{left:8px;top:50%;transform:translateY(-50%)}.dlabel.a{left:50%;top:50%;transform:translate(-50%,-50%);font-size:13px;color:#203040}
+.assessment{margin-top:10px;padding:11px 12px;border-radius:12px;background:#fff8eb;border:1px solid #f2dfb7;font-size:12px;line-height:1.6;color:#564420}.assessment strong{color:#3d2d12}
+.guide{margin-top:10px;border-top:1px solid var(--border);padding-top:10px}.guide h3{margin:0 0 7px;font-size:13px}.guide .item{display:grid;grid-template-columns:95px 1fr;gap:8px;align-items:start;padding:6px 0;font-size:11px;line-height:1.42}.guide .item b{color:#243447}.guide .item span{color:#5d6b78}
+.notice{margin-top:10px;font-size:10.5px;line-height:1.52;color:#667085;background:#f8fafc;border-left:3px solid #b8c7d5;border-radius:0 8px 8px 0;padding:9px 10px}.footer{padding:0 14px 14px;text-align:center;color:#7b8794;font-size:10px}.hidden{display:none!important}
+@media(max-width:480px){.wrap{padding-left:9px;padding-right:9px}.header{padding:12px}.header img{width:48px;height:48px}.header h1{font-size:17px}.grid{padding:9px;gap:9px}.panel{padding:10px}.fields{gap:8px}.choice{font-size:12px;padding:7px 5px}.results-top{grid-template-columns:1fr}}
+</style></head><body><div class="wrap"><main class="shell"><header class="header"><img src="./icon-192.png" alt="Sipa"><div class="copy"><h1>Sipa Projection Calculator</h1><p>Throw Ratio · Distance · Image Size · Screen Illuminance</p></div><span class="badge">V3.0</span></header><div class="grid"><section class="panel"><div class="section-title">Calculation Mode</div><div class="btnrow"><button class="choice active" id="m-ratio" type="button" onclick="setMode('ratio')">Throw Ratio</button><button class="choice" id="m-distance" type="button" onclick="setMode('distance')">Throw Distance</button><button class="choice" id="m-size" type="button" onclick="setMode('size')">Image Size</button></div><div id="basisWrap"><div class="section-title">Screen Size Input</div><div class="btnrow two"><button class="choice active" id="b-width" type="button" onclick="setBasis('width')">Screen Width</button><button class="choice" id="b-diagonal" type="button" onclick="setBasis('diagonal')">Diagonal (in)</button></div></div><div class="section-title">Image Aspect Ratio</div><div class="btnrow"><button class="choice active" id="a-1610" type="button" onclick="setAspect('16:10')">16:10</button><button class="choice" id="a-169" type="button" onclick="setAspect('16:9')">16:9</button><button class="choice" id="a-43" type="button" onclick="setAspect('4:3')">4:3</button></div><div class="fields"><div class="field"><label for="throwRatio">Throw Ratio</label><input id="throwRatio" type="number" min="0" step="0.01" inputmode="decimal" value="0.44"></div><div class="field"><label for="distance">Throw Distance (m)</label><input id="distance" type="number" min="0" step="0.01" inputmode="decimal" value="1.895"></div><div class="field"><label for="screenWidth">Screen Width (m)</label><input id="screenWidth" type="number" min="0" step="0.01" inputmode="decimal" value="4.31"></div><div class="field"><label for="screenDiagonal">Diagonal (in)</label><input id="screenDiagonal" type="number" min="0" step="0.1" inputmode="decimal" value="200"></div><div class="field"><label for="screenHeight">Screen Height (m)</label><input id="screenHeight" type="text" readonly></div><div class="field"><label for="screenArea">Screen Area (m²)</label><input id="screenArea" type="text" readonly></div><div class="field full"><label for="projectorBrightness">Projector Brightness (ISO Lumens)</label><input id="projectorBrightness" type="number" min="0" step="1" inputmode="numeric" value="5000"></div></div><div class="section-title" style="margin-top:14px">Screen Gain (affects nit / fL only)</div><div class="btnrow"><button class="choice" id="g-wall" type="button" onclick="setGain('0.7-0.9')">Standard Wall<small>0.7–0.9</small></button><button class="choice active" id="g-screen" type="button" onclick="setGain('1.0-1.2')">White Screen<small>1.0–1.2</small></button><button class="choice" id="g-high" type="button" onclick="setGain('1.5-2.5')">High-Gain<small>1.5–2.5</small></button></div><button class="calc-btn" type="button" onclick="calculate()">Calculate</button></section><section class="panel"><div class="results-top"><div class="kpi primary"><div class="label">Theoretical Average Screen Illuminance</div><div class="value" id="luxValue">Not calculated</div><div class="sub">Primary metric: lumens ÷ screen area</div></div><div class="kpi secondary"><div class="label">Estimated Screen Brightness</div><div class="value" id="nitValue">Not calculated</div><div class="sub">Secondary metric: reflected luminance</div></div><div class="kpi secondary"><div class="label">Cinema Reference</div><div class="value" id="flValue">Not calculated</div><div class="sub">Secondary metric: foot-lambert</div></div></div><div class="result-lines" id="lines">The calculation result will appear automatically after you enter the values.</div><div class="diagram" id="diagram"><span class="dlabel w" id="wLabel">W: 0.00 m</span><span class="dlabel h" id="hLabel">H: 0.00 m</span><span class="dlabel a" id="aLabel">Area: 0.00 m²</span></div><div class="assessment" id="assessment">The application assessment will appear after calculation.</div><div class="guide"><h3>Average screen illuminance guide (engineering reference)</h3><div class="item"><b>120–200 lux</b><span>Cinema / dark room</span></div>
+<div class="item"><b>200–400 lux</b><span>Home theater / dim room</span></div>
+<div class="item"><b>400–650 lux</b><span>Meeting or classroom / controlled ambient</span></div>
+<div class="item"><b>650–1000 lux</b><span>Bright indoor / exhibit</span></div>
+<div class="item"><b>>1000 lux</b><span>Specialty projection assessment</span></div></div><div class="notice">This version is optimized for quick estimates. The primary metric is theoretical average screen illuminance (lux). nit and fL remain secondary reference values. All results are theoretical and are still affected by ambient light, screen properties, lens transmission, correction loss, uniformity and system contrast. The lux value here means screen white-field illuminance, not room ambient illumination.</div></section></div><div class="footer">Universal projection calculation for projectors of any brand · Powered by Sipa</div></main></div><script>
+const I18N = {"assessWaiting":"The application assessment will appear after calculation.","needDistance":"Enter the throw distance.","needWidth":"Enter the screen width.","needDiagonal":"Enter the diagonal size.","needRatio":"Enter the throw ratio.","needRatioDistance":"Enter the throw ratio and throw distance.","notCalculated":"Not calculated","noLumenInput":"Geometry is calculated. Enter lumens to show brightness results.","wPrefix":"W: ","hPrefix":"H: ","areaPrefix":"Area: ","areaUnit":" m²","outRatio":"Throw ratio: ","outDistance":"Throw distance: ","outWidth":"Screen width: ","outHeight":"Screen height: ","outDiagonal":"Diagonal: ","diagonalUnit":" in","outArea":"Screen area: ","assessmentTitle":"Application assessment: ","assessLow":"Below the common engineering reference range","assessCinema":"Suitable for cinema or a dark room","assessHome":"Suitable for home theater or a dim room","assessMeeting":"Suitable for meetings or classrooms with controlled ambient light","assessBright":"Suitable for bright indoor or exhibit use","assessSpecial":"Above 1000 lux; treat as a specialty projection assessment","noteLow":"Consider a smaller image, higher effective light output, or a revised model choice.","noteContrast":"Final suitability still depends on ambient light on the screen and image-system contrast.","noteAmbient":"Strong ambient light will reduce contrast and raise the black level; confirm on site.","noteSpecial":"Verify ambient light, hotspot risk, screen type, and overall thermal/lifetime impact."};
+let currentMode='ratio', currentBasis='width', currentAspect='16:10', currentGain='1.0-1.2';
+const modeIds={ratio:'m-ratio',distance:'m-distance',size:'m-size'};
+const basisIds={width:'b-width',diagonal:'b-diagonal'};
+const aspectIds={'16:10':'a-1610','16:9':'a-169','4:3':'a-43'};
+const gainIds={'0.7-0.9':'g-wall','1.0-1.2':'g-screen','1.5-2.5':'g-high'};
 
-    <div class="content">
-      <section class="panel" aria-label="Calculation parameters">
-        <div class="section-title">Calculation Mode</div>
-        <div class="btnrow">
-          <button class="choice active" id="m-throw" type="button" onclick="setMode('throwRatio')">Throw Ratio</button>
-          <button class="choice" id="m-distance" type="button" onclick="setMode('distance')">Throw Distance</button>
-          <button class="choice" id="m-size" type="button" onclick="setMode('screenSize')">Image Size</button>
-        </div>
-
-        <div class="section-title">Image Aspect Ratio</div>
-        <div class="btnrow">
-          <button class="choice active" id="a-1610" type="button" onclick="setAspect('16:10')">16:10</button>
-          <button class="choice" id="a-169" type="button" onclick="setAspect('16:9')">16:9</button>
-          <button class="choice" id="a-43" type="button" onclick="setAspect('4:3')">4:3</button>
-        </div>
-
-        <div class="fields">
-          <div class="field">
-            <label for="throwRatio">Throw Ratio</label>
-            <input id="throwRatio" type="number" min="0" step="0.01" inputmode="decimal" value="0.44">
-          </div>
-          <div class="field">
-            <label for="distance">Throw Distance (m)</label>
-            <input id="distance" type="number" min="0" step="0.01" inputmode="decimal" value="1.895">
-          </div>
-          <div class="field">
-            <label for="screenSizeInch">Image Diagonal (inches)</label>
-            <input id="screenSizeInch" type="number" min="0" step="0.1" inputmode="decimal" value="200">
-          </div>
-          <div class="field">
-            <label for="projectorBrightness">Projector Brightness (ISO Lumens)</label>
-            <input id="projectorBrightness" type="number" min="0" step="1" inputmode="numeric" value="5000">
-          </div>
-          <div class="field">
-            <label for="screenWidth">Image Width (m)</label>
-            <input id="screenWidth" type="text" readonly>
-          </div>
-          <div class="field">
-            <label for="screenHeight">Image Height (m)</label>
-            <input id="screenHeight" type="text" readonly>
-          </div>
-          <div class="field full">
-            <label for="screenArea">Image Area (m²)</label>
-            <input id="screenArea" type="text" readonly>
-          </div>
-        </div>
-
-        <div class="section-title" style="margin-top:14px">Projection Surface and Gain</div>
-        <div class="btnrow surface-row">
-          <button class="choice active" id="g-wall" type="button" onclick="setGain('0.7-0.9')">Standard Wall<small>0.7–0.9</small></button>
-          <button class="choice" id="g-matte" type="button" onclick="setGain('1.0-1.2')">Matte Screen<small>1.0–1.2</small></button>
-          <button class="choice" id="g-high" type="button" onclick="setGain('1.5-2.5')">High-Gain Screen<small>1.5–2.5</small></button>
-        </div>
-
-        <button class="calculate" type="button" onclick="calculate()">Calculate</button>
-      </section>
-
-      <section class="panel" aria-label="Calculation results">
-        <div class="result-title">
-          <h2>Calculation Results</h2>
-          <span class="status" id="resultStatus">Waiting</span>
-        </div>
-        <div class="result-text" id="result" aria-live="polite">Enter the parameters and tap “Calculate”.</div>
-
-        <div class="canvas" id="canvas" aria-label="Projected image dimensions">
-          <span class="dim-label w-label" id="wLabel">Width: 0.00 m</span>
-          <span class="dim-label h-label" id="hLabel">Height: 0.00 m</span>
-          <span class="dim-label area-label" id="areaLabel">Area: 0.00 m²</span>
-        </div>
-
-        <div class="luminance-box">
-          <div class="metric-label">Estimated on-screen luminance (theoretical)</div>
-          <div class="metric-value" id="luminanceValue">Not calculated</div>
-          <div class="metric-sub">Equivalent:  <span id="footLambertValue">Not calculated</span></div>
-          <div class="assessment" id="assessment">The application assessment will appear after calculation.</div>
-        </div>
-
-        <div class="guide">
-          <h3>On-screen luminance guide (engineering reference)</h3>
-          <div class="guide-grid"><div class="guide-item"><b>40–60 nit</b><span>Cinema / dark room (about 12–18 fL; 14 fL ≈ 48 nit)</span></div>
-<div class="guide-item"><b>60–120 nit</b><span>Home theater / dim room</span></div>
-<div class="guide-item"><b>120–200 nit</b><span>Meeting or classroom / controlled ambient light</span></div>
-<div class="guide-item"><b>200–300 nit</b><span>Bright indoor / exhibit</span></div>
-<div class="guide-item"><b>>300 nit</b><span>Specialty projection: verify ambient light, screen and system contrast</span></div></div>
-        </div>
-
-        <div class="notice">Note: This is a theoretical estimate based on rated ISO lumens, image area and nominal screen gain. Actual on-screen luminance also depends on calibrated output, lens setting, screen properties, ambient light, uniformity, light-source aging and installation conditions. In bright environments, image-system contrast must also be verified.</div>
-      </section>
-    </div>
-    <div class="footer-note">Sipa Calculator V2.0 · Offline-capable PWA · First launch requires an internet connection</div>
-  </main>
-</div>
-<script>
-let currentMode = 'throwRatio';
-let currentAspect = '16:10';
-let currentGain = '0.7-0.9';
-
-const I18N = {"assessBelow":"Below the typical cinema reference range","assessCinema":"Suitable for cinema or a fully dark room","assessHome":"Suitable for home theater or a dim room","assessMeeting":"Suitable for meetings or classrooms with controlled ambient light","assessBright":"Suitable for bright indoor or exhibit use when light on the screen is controlled","assessSpecial":"Above 300 nit; treat as a specialty projection assessment","noteLow":"Consider a smaller image, higher effective light output or a higher-gain screen.","noteOver300":"Verify ambient light, screen type, hotspot risk and image-system contrast.","noteAmbient":"Ambient light raises the black level; nit alone does not guarantee readability.","zeroWidth":"Width: 0.00 m","zeroHeight":"Height: 0.00 m","zeroArea":"Area: 0.00 m²","notCalculated":"Not calculated","assessWaiting":"The application assessment will appear after calculation.","waiting":"Waiting","needDistanceSize":"Enter the throw distance and image diagonal.","needRatioSize":"Enter the throw ratio and image diagonal.","needRatioDistance":"Enter the throw ratio and throw distance.","widthLabel":"Width: ","heightLabel":"Height: ","areaLabel":"Area: ","squareMeter":" m²","resultDiagonal":"Image diagonal: ","inches":" inches","resultDimensions":"Image dimensions: ","resultArea":"Image area: ","recommendation":"Application assessment: ","calculated":"Calculated","geometryOnly":"Geometry only"};
-
-const modeIds = {throwRatio:'m-throw',distance:'m-distance',screenSize:'m-size'};
-const aspectIds = {'16:10':'a-1610','16:9':'a-169','4:3':'a-43'};
-const gainIds = {'0.7-0.9':'g-wall','1.0-1.2':'g-matte','1.5-2.5':'g-high'};
-
-function setActive(map, value){
-  Object.entries(map).forEach(([key,id])=>{
-    document.getElementById(id).classList.toggle('active', key===value);
-  });
+function setActive(map,val){Object.entries(map).forEach(([k,id])=>document.getElementById(id).classList.toggle('active',k===val));}
+function setMode(m){currentMode=m;setActive(modeIds,m);document.getElementById('basisWrap').classList.toggle('hidden',m==='size');updateEditable();calculate();}
+function setBasis(b){currentBasis=b;setActive(basisIds,b);updateEditable();calculate();}
+function setAspect(a){currentAspect=a;setActive(aspectIds,a);document.getElementById('diagram').style.aspectRatio=a.replace(':',' / ');calculate();}
+function setGain(g){currentGain=g;setActive(gainIds,g);calculate();}
+function num(id){const v=parseFloat(document.getElementById(id).value);return Number.isFinite(v)?v:0;}
+function calcWHFromDiagonal(d,aspect){const [a,b]=aspect.split(':').map(Number);const h=Math.hypot(a,b);return [d*a/h,d*b/h];}
+function calcHeightFromWidth(w,aspect){const [a,b]=aspect.split(':').map(Number);return w*b/a;}
+function setRO(id,val){document.getElementById(id).readOnly=val;}
+function updateEditable(){
+  setRO('throwRatio',false); setRO('distance',false); setRO('screenWidth',false); setRO('screenDiagonal',false);
+  if(currentMode==='ratio'){setRO('throwRatio',true); if(currentBasis==='width') setRO('screenDiagonal',true); else setRO('screenWidth',true);}
+  else if(currentMode==='distance'){setRO('distance',true); if(currentBasis==='width') setRO('screenDiagonal',true); else setRO('screenWidth',true);}
+  else {setRO('screenWidth',true); setRO('screenDiagonal',true);}
 }
-function setMode(mode){
-  currentMode = mode;
-  setActive(modeIds, mode);
-  updateFields();
+function classifyLux(lux){
+  if(lux<=0) return [I18N.assessWaiting,''];
+  if(lux<120) return [I18N.assessLow,I18N.noteLow];
+  if(lux<200) return [I18N.assessCinema,I18N.noteContrast];
+  if(lux<400) return [I18N.assessHome,I18N.noteContrast];
+  if(lux<650) return [I18N.assessMeeting,I18N.noteAmbient];
+  if(lux<=1000) return [I18N.assessBright,I18N.noteAmbient];
+  return [I18N.assessSpecial,I18N.noteSpecial];
 }
-function setAspect(aspect){
-  currentAspect = aspect;
-  setActive(aspectIds, aspect);
-  document.getElementById('canvas').style.aspectRatio = aspect.replace(':',' / ');
-  calculate();
-}
-function setGain(gain){
-  currentGain = gain;
-  setActive(gainIds, gain);
-  calculate();
-}
-function numberValue(id){
-  const value = parseFloat(document.getElementById(id).value);
-  return Number.isFinite(value) ? value : 0;
-}
-function calcWH(diagonal, aspect){
-  const parts = aspect.split(':').map(Number);
-  const denominator = Math.hypot(parts[0], parts[1]);
-  return [diagonal * parts[0] / denominator, diagonal * parts[1] / denominator];
-}
-function aspectHeightRatio(aspect){
-  const parts = aspect.split(':').map(Number);
-  return parts[1] / parts[0];
-}
-function formatRange(a,b,digits=1){
-  return `${a.toFixed(digits)} – ${b.toFixed(digits)}`;
-}
-function classifyLuminance(nmin,nmax){
-  const mid = (nmin+nmax)/2;
-  let primary = '';
-  if(mid < 40) primary = I18N.assessBelow;
-  else if(mid < 60) primary = I18N.assessCinema;
-  else if(mid < 120) primary = I18N.assessHome;
-  else if(mid < 200) primary = I18N.assessMeeting;
-  else if(mid <= 300) primary = I18N.assessBright;
-  else primary = I18N.assessSpecial;
-
-  const notes = [];
-  if(nmin < 40) notes.push(I18N.noteLow);
-  if(nmax > 300) notes.push(I18N.noteOver300);
-  if(nmax >= 120) notes.push(I18N.noteAmbient);
-  return {primary, notes};
-}
-function setEmpty(message){
-  document.getElementById('result').textContent = message;
-  ['screenWidth','screenHeight','screenArea'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('wLabel').textContent = I18N.zeroWidth;
-  document.getElementById('hLabel').textContent = I18N.zeroHeight;
-  document.getElementById('areaLabel').textContent = I18N.zeroArea;
-  document.getElementById('luminanceValue').textContent = I18N.notCalculated;
-  document.getElementById('footLambertValue').textContent = I18N.notCalculated;
-  document.getElementById('assessment').innerHTML = I18N.assessWaiting;
-  document.getElementById('resultStatus').textContent = I18N.waiting;
-}
-function updateFields(){
-  const throwRatio = document.getElementById('throwRatio');
-  const distance = document.getElementById('distance');
-  const screenSize = document.getElementById('screenSizeInch');
-
-  throwRatio.readOnly = currentMode === 'throwRatio';
-  distance.readOnly = currentMode === 'distance';
-  screenSize.readOnly = currentMode === 'screenSize';
-
-  if(currentMode === 'throwRatio' && !throwRatio.value) throwRatio.value = '0.44';
-  calculate();
-}
+function setEmpty(msg){document.getElementById('lines').textContent=msg;document.getElementById('luxValue').textContent=I18N.notCalculated;document.getElementById('nitValue').textContent=I18N.notCalculated;document.getElementById('flValue').textContent=I18N.notCalculated;document.getElementById('assessment').innerHTML=I18N.assessWaiting;}
 function calculate(){
-  let throwRatio = numberValue('throwRatio');
-  let distance = numberValue('distance');
-  let screenSizeInch = numberValue('screenSizeInch');
-  const projectorBrightness = numberValue('projectorBrightness');
-
-  let width=0, height=0, diagonal=0;
-
-  if(currentMode === 'throwRatio'){
-    if(distance<=0 || screenSizeInch<=0){
-      setEmpty(I18N.needDistanceSize); return;
-    }
-    diagonal = screenSizeInch * 0.0254;
-    [width,height] = calcWH(diagonal,currentAspect);
-    throwRatio = distance / width;
-    document.getElementById('throwRatio').value = throwRatio.toFixed(2);
-  }else if(currentMode === 'distance'){
-    if(throwRatio<=0 || screenSizeInch<=0){
-      setEmpty(I18N.needRatioSize); return;
-    }
-    diagonal = screenSizeInch * 0.0254;
-    [width,height] = calcWH(diagonal,currentAspect);
-    distance = throwRatio * width;
-    document.getElementById('distance').value = distance.toFixed(2);
-  }else{
-    if(throwRatio<=0 || distance<=0){
-      setEmpty(I18N.needRatioDistance); return;
-    }
-    width = distance / throwRatio;
-    height = width * aspectHeightRatio(currentAspect);
-    diagonal = Math.hypot(width,height);
-    screenSizeInch = diagonal / 0.0254;
-    document.getElementById('screenSizeInch').value = screenSizeInch.toFixed(1);
+  let tr=num('throwRatio'), dist=num('distance'), width=num('screenWidth'), diagIn=num('screenDiagonal'), lumens=num('projectorBrightness');
+  let height=0, diagM=0;
+  if(currentMode==='ratio'){
+    if(dist<=0){setEmpty(I18N.needDistance);return;}
+    if(currentBasis==='width'){if(width<=0){setEmpty(I18N.needWidth);return;} height=calcHeightFromWidth(width,currentAspect); diagM=Math.hypot(width,height); diagIn=diagM/0.0254; tr=dist/width; document.getElementById('screenDiagonal').value=diagIn.toFixed(1); document.getElementById('throwRatio').value=tr.toFixed(2);}
+    else {if(diagIn<=0){setEmpty(I18N.needDiagonal);return;} diagM=diagIn*0.0254; [width,height]=calcWHFromDiagonal(diagM,currentAspect); tr=dist/width; document.getElementById('screenWidth').value=width.toFixed(2); document.getElementById('throwRatio').value=tr.toFixed(2);}
+  } else if(currentMode==='distance'){
+    if(tr<=0){setEmpty(I18N.needRatio);return;}
+    if(currentBasis==='width'){if(width<=0){setEmpty(I18N.needWidth);return;} height=calcHeightFromWidth(width,currentAspect); diagM=Math.hypot(width,height); diagIn=diagM/0.0254; dist=tr*width; document.getElementById('screenDiagonal').value=diagIn.toFixed(1); document.getElementById('distance').value=dist.toFixed(2);}
+    else {if(diagIn<=0){setEmpty(I18N.needDiagonal);return;} diagM=diagIn*0.0254; [width,height]=calcWHFromDiagonal(diagM,currentAspect); dist=tr*width; document.getElementById('screenWidth').value=width.toFixed(2); document.getElementById('distance').value=dist.toFixed(2);}
+  } else {
+    if(tr<=0 || dist<=0){setEmpty(I18N.needRatioDistance);return;}
+    width=dist/tr; height=calcHeightFromWidth(width,currentAspect); diagM=Math.hypot(width,height); diagIn=diagM/0.0254; document.getElementById('screenWidth').value=width.toFixed(2); document.getElementById('screenDiagonal').value=diagIn.toFixed(1);
   }
-
-  const area = width * height;
-  document.getElementById('screenWidth').value = width.toFixed(2);
-  document.getElementById('screenHeight').value = height.toFixed(2);
-  document.getElementById('screenArea').value = area.toFixed(2);
-
-  document.getElementById('wLabel').textContent = I18N.widthLabel + width.toFixed(2) + ' m';
-  document.getElementById('hLabel').textContent = I18N.heightLabel + height.toFixed(2) + ' m';
-  document.getElementById('areaLabel').textContent = I18N.areaLabel + area.toFixed(2) + I18N.squareMeter;
-
-  document.getElementById('result').textContent =
-    I18N.resultDiagonal + screenSizeInch.toFixed(1) + I18N.inches +
-    '\n' + I18N.resultDimensions + width.toFixed(2) + ' m × ' + height.toFixed(2) + ' m' +
-    '\n' + I18N.resultArea + area.toFixed(2) + I18N.squareMeter;
-
-  if(projectorBrightness>0 && area>0){
-    const [gmin,gmax] = currentGain.split('-').map(Number);
-    const lux = projectorBrightness / area;
-    const nmin = lux * gmin / Math.PI;
-    const nmax = lux * gmax / Math.PI;
-    const fmin = nmin / 3.426;
-    const fmax = nmax / 3.426;
-    const assessment = classifyLuminance(nmin,nmax);
-
-    document.getElementById('luminanceValue').textContent = formatRange(nmin,nmax) + ' nit';
-    document.getElementById('footLambertValue').textContent = formatRange(fmin,fmax) + ' fL';
-    document.getElementById('assessment').innerHTML =
-      '<strong>' + I18N.recommendation + assessment.primary + '</strong>' +
-      (assessment.notes.length ? '<br>' + assessment.notes.join(' ') : '');
-    document.getElementById('resultStatus').textContent = I18N.calculated;
-  }else{
-    document.getElementById('luminanceValue').textContent = I18N.notCalculated;
-    document.getElementById('footLambertValue').textContent = I18N.notCalculated;
-    document.getElementById('assessment').innerHTML = I18N.assessWaiting;
-    document.getElementById('resultStatus').textContent = I18N.geometryOnly;
-  }
+  const area=width*height;
+  document.getElementById('screenHeight').value=height.toFixed(2);
+  document.getElementById('screenArea').value=area.toFixed(2);
+  document.getElementById('wLabel').textContent=I18N.wPrefix+width.toFixed(2)+' m';
+  document.getElementById('hLabel').textContent=I18N.hPrefix+height.toFixed(2)+' m';
+  document.getElementById('aLabel').textContent=I18N.areaPrefix+area.toFixed(2)+I18N.areaUnit;
+  document.getElementById('lines').textContent=I18N.outRatio+tr.toFixed(2)+'\n'+I18N.outDistance+dist.toFixed(2)+' m\n'+I18N.outWidth+width.toFixed(2)+' m\n'+I18N.outHeight+height.toFixed(2)+' m\n'+I18N.outDiagonal+diagIn.toFixed(1)+I18N.diagonalUnit+'\n'+I18N.outArea+area.toFixed(2)+I18N.areaUnit;
+  if(lumens>0 && area>0){
+    const lux=lumens/area, [gmin,gmax]=currentGain.split('-').map(Number), nitMin=lux*gmin/Math.PI, nitMax=lux*gmax/Math.PI, flMin=nitMin/3.426, flMax=nitMax/3.426;
+    const [mainAssess,noteAssess]=classifyLux(lux);
+    document.getElementById('luxValue').textContent=lux.toFixed(0)+' lux';
+    document.getElementById('nitValue').textContent=nitMin.toFixed(0)+'–'+nitMax.toFixed(0)+' nit';
+    document.getElementById('flValue').textContent=flMin.toFixed(1)+'–'+flMax.toFixed(1)+' fL';
+    document.getElementById('assessment').innerHTML='<strong>'+I18N.assessmentTitle+mainAssess+'</strong><br>'+noteAssess;
+  } else setEmpty(I18N.noLumenInput);
 }
-['throwRatio','distance','screenSizeInch','projectorBrightness'].forEach(id=>{
-  document.getElementById(id).addEventListener('input',()=>calculate());
-});
-if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>{
-    navigator.serviceWorker.register('./sw.js').catch(()=>{});
-  });
-}
-window.addEventListener('load',()=>{
-  setActive(modeIds,currentMode);
-  setActive(aspectIds,currentAspect);
-  setActive(gainIds,currentGain);
-  updateFields();
-});
-</script>
-</body>
-</html>
+['throwRatio','distance','screenWidth','screenDiagonal','projectorBrightness'].forEach(id=>document.getElementById(id).addEventListener('input',calculate));
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}
+window.addEventListener('load',()=>{setActive(modeIds,currentMode);setActive(basisIds,currentBasis);setActive(aspectIds,currentAspect);setActive(gainIds,currentGain);updateEditable();calculate();});
+</script></body></html>
