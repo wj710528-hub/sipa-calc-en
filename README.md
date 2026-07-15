@@ -1,21 +1,31 @@
-# Sipa Projector Calculator V2.0 — English
+# Sipa Projection Calculator V3.0
 
-## Upgrade highlights
-- Revised luminance bands: 40–60, 60–120, 120–200 and 200–300 nit
-- Added both nit and foot-lambert (fL) results
-- Added automatic application assessment and engineering cautions
-- Added a theoretical-estimate disclaimer
-- Updated the Service Worker cache and changed navigation to online-first with offline fallback
-- Added isolated Chinese and English caches so the two installed apps do not clear each other’s offline data
-- Preserves the existing PWA name and is ready to replace the files in `sipa-calc-en`
+## Official name
 
-## Update the existing GitHub Pages site
-1. Open `wj710528-hub/sipa-calc-en`
-2. Select **Add file → Upload files**
-3. Upload every extracted file to the repository root
-4. Replace the existing files and commit to `main`
-5. GitHub Pages will redeploy automatically
+**Sipa Projection Calculator**
 
-## Updating installed copies
-Open the installed app once while online, let it load, close it, and open it again.
-If the old interface remains, refresh the website, clear the site cache, or remove and reinstall the Home Screen app.
+Subtitle:
+
+**Throw Ratio · Distance · Image Size · Screen Illuminance**
+
+## Positioning
+
+A universal projection calculation tool for Sipa and other projector brands.
+
+- Screen width is available as a primary input
+- lux is the primary theoretical screen-illuminance result
+- nit / fL remain secondary references
+- Fast throw ratio, distance and image-size calculation
+- Installable on a phone Home Screen with offline support
+
+## Brand statement
+
+Universal projection calculation for projectors of any brand.
+
+**Powered by Sipa**
+
+## Deployment target
+
+Repository: `wj710528-hub/sipa-calc-en`
+
+Website: `https://wj710528-hub.github.io/sipa-calc-en/`
